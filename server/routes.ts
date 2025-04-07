@@ -22,32 +22,33 @@ function generateKeyPair() {
   });
 }
 
-function createTestEmailTransport() {
+function createConsoleEmailTransport() {
   return {
     sendMail: (mailOptions: any) => {
-      console.log("Email would be sent with options:", mailOptions);
+      console.log("\n==== VERIFICATION EMAIL ====");
+      console.log(`TO: ${mailOptions.to}`);
+      console.log(`SUBJECT: ${mailOptions.subject}`);
+      
+      // Extract the verification URL from the HTML content
+      const urlMatch = mailOptions.html.match(/href="([^"]+)"/);
+      if (urlMatch && urlMatch[1]) {
+        console.log(`\n🔐 VERIFICATION LINK (CLICK THIS): ${urlMatch[1]}\n`);
+      }
+      
+      console.log("============================\n");
       return Promise.resolve({ response: "250 OK" });
     }
   };
 }
 
-const emailTransport = process.env.SMTP_HOST
-  ? nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: process.env.SMTP_SECURE === "true",
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
-      },
-    })
-  : createTestEmailTransport();
+// Always use the console transport for development
+const emailTransport = createConsoleEmailTransport();
 
 async function sendVerificationEmail(email: string, token: string) {
   const verificationUrl = `${process.env.HOST_URL || 'http://localhost:5000'}/verify/${token}`;
   
   await emailTransport.sendMail({
-    from: process.env.EMAIL_FROM || '"SecureFace" <noreply@secureface.app>',
+    from: '"SecureFace" <jakel.pannyworth@gmail.com>',
     to: email,
     subject: "Verify your email for SecureFace",
     text: `Please verify your email by clicking this link: ${verificationUrl}`,
@@ -135,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Verify email
+  // Verify email - API endpoint
   app.get('/api/verify/:token', async (req: Request, res: Response) => {
     try {
       const { token } = req.params;
@@ -155,6 +156,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ message: "Failed to verify email" });
     }
+  });
+  
+  // Direct verification link handler - redirects to frontend verification page
+  app.get('/verify/:token', (req: Request, res: Response) => {
+    const { token } = req.params;
+    // Redirect to the frontend verification page
+    console.log(`Received direct verification with token: ${token}`);
+    res.redirect(`/email-verification/${token}`);
   });
 
   // Save face descriptor
