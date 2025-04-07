@@ -126,6 +126,13 @@ const FaceCapture = () => {
   const verifyFaceMutation = useMutation({
     mutationFn: async (faceDescriptor: number[]) => {
       const response = await apiRequest("POST", "/api/login/face", { faceDescriptor });
+      
+      // If the response is not ok, throw an error with the response data
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Face verification failed");
+      }
+      
       return response.json();
     },
     onSuccess: async (data) => {
@@ -162,11 +169,19 @@ const FaceCapture = () => {
       toast({
         variant: "destructive",
         title: "Verification Failed",
-        description: error.message || "Failed to verify your face.",
+        description: error.message || "Failed to verify your face. Make sure it's the same face used during registration.",
       });
+      
+      // Add a small delay then allow retrying
+      setTimeout(() => {
+        setIsCapturing(false);
+      }, 1500);
     },
     onSettled: () => {
-      setIsCapturing(false);
+      // We now handle this in onError to allow for the delay
+      if (verifyFaceMutation.isSuccess) {
+        setIsCapturing(false);
+      }
     }
   });
 

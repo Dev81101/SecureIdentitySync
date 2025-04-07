@@ -123,6 +123,40 @@ function verifySignature(publicKey: string, challenge: string, signature: string
   }
 }
 
+/**
+ * Compares two face descriptors and returns a similarity score
+ * A lower score means the faces are more similar
+ * @param descriptor1 - First face descriptor 
+ * @param descriptor2 - Second face descriptor
+ * @returns The Euclidean distance (lower is more similar)
+ */
+function calculateFaceSimilarity(descriptor1: number[], descriptor2: number[]): number {
+  if (descriptor1.length !== descriptor2.length) {
+    throw new Error("Face descriptors must have the same length");
+  }
+  
+  // Calculate Euclidean distance between descriptors
+  let sum = 0;
+  for (let i = 0; i < descriptor1.length; i++) {
+    const diff = descriptor1[i] - descriptor2[i];
+    sum += diff * diff;
+  }
+  
+  return Math.sqrt(sum);
+}
+
+/**
+ * Determines if two face descriptors belong to the same person
+ * @param descriptor1 - First face descriptor
+ * @param descriptor2 - Second face descriptor
+ * @param threshold - Threshold for similarity (lower is stricter)
+ * @returns True if faces match, false otherwise
+ */
+function isSameFace(descriptor1: number[], descriptor2: number[], threshold = 0.6): boolean {
+  const distance = calculateFaceSimilarity(descriptor1, descriptor2);
+  return distance < threshold;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   const SessionStore = MemoryStore(session);
@@ -307,9 +341,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Invalid face descriptor format" });
       }
       
-      // In a real app, you'd compare the face descriptor with the stored one
-      // For this demo, we're assuming success since face-api.js would handle this client-side
+      // Compare the submitted face descriptor with the stored one
+      console.log('Comparing face descriptors for user:', user.id);
       
+      // Use our face verification function
+      const matchResult = isSameFace(faceDescriptor, storedDescriptor, 0.5); // Threshold of 0.5 (stricter)
+      
+      if (!matchResult) {
+        console.log('Face verification failed for user:', user.id);
+        return res.status(401).json({ 
+          message: "Face verification failed. Please try again.",
+          verified: false
+        });
+      }
+      
+      console.log('Face verification successful for user:', user.id);
       res.status(200).json({ 
         message: "Face recognition successful",
         verified: true
