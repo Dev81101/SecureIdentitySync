@@ -39,7 +39,14 @@ const Login = () => {
     },
     onSuccess: (data) => {
       setChallenge(data.challenge);
+      // Store the challenge in sessionStorage for face verification
+      sessionStorage.setItem("auth_challenge", data.challenge);
+      
       if (data.requiresFaceRecognition) {
+        toast({
+          title: "Face verification required",
+          description: "Please verify your identity with face recognition.",
+        });
         navigate("/face-capture?mode=login");
       } else {
         // If no face recognition is set up, we'd handle it differently

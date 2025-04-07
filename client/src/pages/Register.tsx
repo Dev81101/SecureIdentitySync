@@ -44,10 +44,11 @@ const Register = () => {
     },
     onSuccess: (data) => {
       toast({
-        title: "Registration initiated",
-        description: "Please check your email for verification.",
+        title: "Registration successful",
+        description: "Please continue to face capture setup.",
       });
-      navigate("/email-verification/pending");
+      // Directly navigate to face capture for registration
+      navigate("/face-capture?mode=register");
     },
     onError: (error: any) => {
       toast({

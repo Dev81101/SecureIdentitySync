@@ -139,21 +139,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create user
       const user = await storage.createUser(userData);
       
-      // Generate and store verification token
-      const { token } = await storage.createVerificationToken(user.id) || {};
-      if (!token) {
-        return res.status(500).json({ message: "Failed to create verification token" });
+      // Automatically set email as verified
+      const updatedUser = await storage.updateUser(user.id, { emailVerified: true });
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to verify user email" });
       }
-      
-      // Send verification email
-      await sendVerificationEmail(user.email, token);
       
       // Store user ID in session
       req.session.userId = user.id;
       
+      // Respond with success and direct user to face capture
       res.status(201).json({ 
-        message: "Registration initiated. Please check your email for verification.",
-        userId: user.id
+        message: "Registration successful. Continue to face capture.",
+        userId: user.id,
+        redirectToFace: true
       });
     } catch (error: any) {
       if (error.errors) {
@@ -236,9 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      if (!user.emailVerified) {
-        return res.status(403).json({ message: "Email not verified" });
-      }
+      // Skip email verification check since we're auto-verifying emails
       
       // Generate challenge
       const challenge = await generateChallenge(user.id);

@@ -20,7 +20,7 @@ const Home = () => {
         </h1>
         <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
           Experience the next generation of secure, passwordless authentication
-          using email verification and face recognition.
+          powered by facial recognition and public/private key cryptography.
         </p>
         <div className="mt-10 flex justify-center">
           {user ? (
@@ -124,10 +124,10 @@ const Home = () => {
                     </span>
                   </div>
                   <h3 className="mt-8 text-lg font-medium text-gray-900 tracking-tight">
-                    Universal Access
+                    Simplified Process
                   </h3>
                   <p className="mt-5 text-base text-gray-500">
-                    Access your account from any device with a camera.
+                    Just register with your email, scan your face, and you're in! No verification links or passwords.
                   </p>
                 </div>
               </div>
