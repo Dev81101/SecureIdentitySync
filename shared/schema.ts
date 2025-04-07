@@ -1,14 +1,13 @@
 import { 
-  sqliteTable as sqlServerTable,
+  sqliteTable,
   text,
   integer
 } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Using SQLite table structure as a close approximation for SQL Server
-// since we don't have direct SQL Server types in drizzle-orm
-export const users = sqlServerTable("users", {
+// Using SQLite for persistent storage
+export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),

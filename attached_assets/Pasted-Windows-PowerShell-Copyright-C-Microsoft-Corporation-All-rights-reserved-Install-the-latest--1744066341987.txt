@@ -1,0 +1,102 @@
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+
+PS C:\Users\HP\Desktop\SQLLite\SecureIdentitySync> npm install
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+
+added 607 packages, and audited 608 packages in 15s
+
+80 packages are looking for funding
+  run `npm fund` for details
+
+11 vulnerabilities (2 low, 8 moderate, 1 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+PS C:\Users\HP\Desktop\SQLLite\SecureIdentitySync> npm run dev          
+
+> rest-express@1.0.0 dev
+> tsx server/index.ts
+
+Using SQLite in-memory database for simplicity
+12:51:25 AM [express] Initializing database schema...
+Initializing SQLite schema...
+SQLite users table created successfully
+Available tables: users, sqlite_sequence
+SQLite database initialized: true
+Error connecting to SQL Server: ConnectionError: Failed to connect to DESKTOP-S1S018:1433 - Could not connect (sequence)
+    at C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\mssql\lib\tedious\connection-pool.js:85:17
+    at err (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:1784:9)
+    at Object.onceWrapper (node:events:633:26)
+    at Connection.emit (node:events:518:28)
+    at emit (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:1927:18)
+    at socketError (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:2334:12)
+    at <anonymous> (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:2123:37)
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {
+  code: 'ESOCKET',
+  originalError: ConnectionError: Failed to connect to DESKTOP-S1S018:1433 - Could not connect (sequence)
+      at socketError (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:2334:28)
+      at <anonymous> (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:2123:37)
+      at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {
+    code: 'ESOCKET',
+    [cause]: AggregateError: Could not connect (sequence)
+        at connectInSequence (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connector.ts:144:9)
+        at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at async <anonymous> (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:2102:20) {
+      [errors]: [Array]
+    }
+  }
+}
+Error creating SQL Server tables: ConnectionError: Failed to connect to DESKTOP-S1S018:1433 - Could not connect (sequence)
+    at C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\mssql\lib\tedious\connection-pool.js:85:17
+    at err (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:1784:9)
+    at Object.onceWrapper (node:events:633:26)
+    at Connection.emit (node:events:518:28)
+    at emit (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:1927:18)
+    at socketError (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:2334:12)
+    at <anonymous> (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:2123:37)
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {
+  code: 'ESOCKET',
+  originalError: ConnectionError: Failed to connect to DESKTOP-S1S018:1433 - Could not connect (sequence)
+      at socketError (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:2334:28)
+      at <anonymous> (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:2123:37)
+      at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {
+    code: 'ESOCKET',
+    [cause]: AggregateError: Could not connect (sequence)
+        at connectInSequence (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connector.ts:144:9)
+        at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at async <anonymous> (C:\Users\HP\Desktop\SQLLite\SecureIdentitySync\node_modules\tedious\src\connection.ts:2102:20) {
+      [errors]: [Array]
+    }
+  }
+}
+12:51:29 AM [{"sqlite":{"success":true,"sqlite":{"name":"auth.db","open":true,"inTransaction":false,"readonly":false,"memory":false}},"sqlServer":{"success":false,"error":"Failed to connect to DESKTOP-S1S018:1433 - Could not connect (sequence)"}}] Database initialization results:
+node:events:496
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen ENOTSUP: operation not supported on socket 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1915:21)
+    at listenInCluster (node:net:1994:12)
+    at node:net:2203:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1973:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'ENOTSUP',
+  errno: -4049,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 5000
+}
+
+Node.js v22.14.0
+PS C:\Users\HP\Desktop\SQLLite\SecureIdentitySync>

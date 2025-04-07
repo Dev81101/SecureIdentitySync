@@ -8,7 +8,7 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import { parseJsonFromDb } from "./dbUtils";
 import nodemailer from "nodemailer";
-import { db, sqlDb } from "./db";
+import { db } from "./db";
 import { sql } from "drizzle-orm";
 
 // Extend the session type to include our custom properties
@@ -409,66 +409,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Import the database initialization utility
-      const { initPostgresSchema, initSQLiteSchema } = await import('./initDb');
+      const { initSQLiteSchema } = await import('./initDb');
       
-      // Check if PostgreSQL is configured
-      const postgresStatus: DbStatus = { connected: false, error: null, isActive: false };
-      if (process.env.DATABASE_URL) {
-        try {
-          // Initialize schema and get client
-          const pgResult = await initPostgresSchema();
-          
-          if (pgResult.success && pgResult.client) {
-            // Create a query executor function that works with different client interfaces
-            const execQuery = async (sql: string) => {
-              const client = pgResult.client;
-              // Try the modern API first
-              if (typeof client === 'function') {
-                return await client(sql);
-              } 
-              // Fall back to the object API if available
-              else if (typeof client === 'object' && client !== null && 'query' in client) {
-                return await (client as any).query(sql);
-              }
-              // Last resort - throw an error
-              else {
-                throw new Error('Unsupported Neon client interface');
-              }
-            };
-            
-            // Test connection
-            const connectionTest = await execQuery('SELECT 1 as test');
-            const testResult = connectionTest.rows?.[0] || (Array.isArray(connectionTest) ? connectionTest[0] : null);
-            postgresStatus.connected = testResult?.test === 1;
-            postgresStatus.isActive = true; // PostgreSQL is the primary if configured
-            
-            // Get table list
-            const tableResult = await execQuery(`
-              SELECT table_name 
-              FROM information_schema.tables 
-              WHERE table_schema = 'public'
-            `);
-            
-            const tables = tableResult.rows || (Array.isArray(tableResult) ? tableResult : []);
-            postgresStatus.tables = tables.map((r: any) => r.table_name);
-          } else {
-            throw new Error(pgResult.error || 'PostgreSQL initialization failed without error details');
-          }
-        } catch (error) {
-          postgresStatus.error = error instanceof Error ? error.message : 'Unknown error';
-        }
-      } else {
-        postgresStatus.error = 'PostgreSQL not configured (no DATABASE_URL)';
-      }
-      
-      // Check SQLite connection - fallback if PostgreSQL is not available
+      // Check SQLite connection - our only database
       const sqliteStatus: DbStatus = { 
         connected: false, 
         error: null, 
-        isActive: !postgresStatus.connected 
+        isActive: true 
       };
       
-      // Always try to initialize SQLite schema as a fallback
+      // Initialize SQLite schema
       try {
         // Initialize schema and get SQLite instance
         const sqliteResult = await initSQLiteSchema();
@@ -477,7 +427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             // Test connection
             const stmt = sqliteResult.sqlite.prepare('SELECT 1 as test_value');
-            const result = stmt.get();
+            const result = stmt.get() as { test_value: number };
             sqliteStatus.connected = result?.test_value === 1;
           } catch (error) {
             console.error('SQLite test query error:', error);
@@ -498,31 +448,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sqliteStatus.error = error instanceof Error ? error.message : 'Unknown error';
       }
       
-      // Check SQL Server connection
-      const sqlServerStatus: DbStatus = { connected: false, error: null, isActive: false };
-      try {
-        await sqlDb.connect();
-        const result = await sqlDb.request().query('SELECT 1 AS TestConnection');
-        sqlServerStatus.connected = result?.recordset?.[0]?.TestConnection === 1;
-        
-        if (sqlServerStatus.connected) {
-          // Get table list
-          const tableResult = await sqlDb.request().query(`
-            SELECT TABLE_NAME 
-            FROM INFORMATION_SCHEMA.TABLES 
-            WHERE TABLE_TYPE = 'BASE TABLE'
-          `);
-          
-          sqlServerStatus.tables = tableResult.recordset.map(r => r.TABLE_NAME);
-        }
-      } catch (error) {
-        sqlServerStatus.error = error instanceof Error ? error.message : 'Unknown error';
-      }
-      
       res.status(200).json({
-        postgresStatus,
-        sqliteStatus,
-        sqlServerStatus
+        sqlite: sqliteStatus
       });
     } catch (error) {
       res.status(500).json({ 
@@ -532,31 +459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin-only endpoint to migrate users to SQL Server
-  app.post('/api/admin/migrate-to-sqlserver', async (req: Request, res: Response) => {
-    try {
-      // In a real app, check for admin rights
-      const { migrateAllUsersToSqlServer } = await import('./sqlServerMigration');
-      const result = await migrateAllUsersToSqlServer();
-      
-      if (result.success) {
-        res.status(200).json({ 
-          message: `Successfully migrated ${result.count} users to SQL Server` 
-        });
-      } else {
-        res.status(500).json({ 
-          message: "Migration failed", 
-          error: result.error 
-        });
-      }
-    } catch (error) {
-      console.error('Error during migration:', error);
-      res.status(500).json({ 
-        message: "Migration error", 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      });
-    }
-  });
+  // Endpoint removed - SQL Server migration is no longer supported
   
   return httpServer;
 }
