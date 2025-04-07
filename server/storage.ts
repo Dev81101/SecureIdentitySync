@@ -1,5 +1,7 @@
 import { users, type User, type InsertUser } from "@shared/schema";
 import crypto from "crypto";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -12,112 +14,106 @@ export interface IStorage {
   savePublicKey(userId: number, publicKey: string): Promise<User | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  currentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.currentId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email.toLowerCase() === email.toLowerCase(),
-    );
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user: User = { 
-      ...insertUser, 
-      id, 
-      publicKey: null, 
-      faceDescriptor: null,
-      emailVerified: false,
-      verificationToken: null,
-      verificationTokenExpiry: null
-    };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...insertUser,
+        email: insertUser.email.toLowerCase(),
+        emailVerified: false,
+      })
+      .returning();
     return user;
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
-    
-    return updatedUser;
+    const [user] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
   }
 
   async createVerificationToken(userId: number): Promise<{ token: string, expiry: number } | undefined> {
-    const user = this.users.get(userId);
-    if (!user) return undefined;
-    
+    // Generate a random token
     const token = crypto.randomBytes(32).toString('hex');
     // Token expires after 24 hours
     const expiry = Math.floor(Date.now() / 1000) + 86400;
     
-    this.users.set(userId, {
-      ...user,
-      verificationToken: token,
-      verificationTokenExpiry: expiry
-    });
+    // Update the user with the token
+    const [user] = await db
+      .update(users)
+      .set({
+        verificationToken: token,
+        verificationTokenExpiry: expiry
+      })
+      .where(eq(users.id, userId))
+      .returning();
     
+    if (!user) return undefined;
     return { token, expiry };
   }
 
   async verifyUserEmail(token: string): Promise<User | undefined> {
-    const user = Array.from(this.users.values()).find(
-      (user) => user.verificationToken === token && 
-                user.verificationTokenExpiry && 
-                user.verificationTokenExpiry > Math.floor(Date.now() / 1000)
-    );
+    // Find the user with the given token
+    const now = Math.floor(Date.now() / 1000);
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.verificationToken, token));
     
-    if (!user) return undefined;
+    if (!user || !user.verificationTokenExpiry || user.verificationTokenExpiry < now) {
+      return undefined; // Token not found or expired
+    }
     
-    const updatedUser = {
-      ...user,
-      emailVerified: true,
-      verificationToken: null,
-      verificationTokenExpiry: null
-    };
+    // Mark email as verified and clear token
+    const [verifiedUser] = await db
+      .update(users)
+      .set({
+        emailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null
+      })
+      .where(eq(users.id, user.id))
+      .returning();
     
-    this.users.set(user.id, updatedUser);
-    return updatedUser;
+    return verifiedUser || undefined;
   }
 
   async saveFaceDescriptor(userId: number, faceDescriptor: number[]): Promise<User | undefined> {
-    const user = this.users.get(userId);
-    if (!user) return undefined;
+    const [user] = await db
+      .update(users)
+      .set({ faceDescriptor })
+      .where(eq(users.id, userId))
+      .returning();
     
-    const updatedUser = {
-      ...user,
-      faceDescriptor
-    };
-    
-    this.users.set(userId, updatedUser);
-    return updatedUser;
+    return user || undefined;
   }
 
   async savePublicKey(userId: number, publicKey: string): Promise<User | undefined> {
-    const user = this.users.get(userId);
-    if (!user) return undefined;
+    const [user] = await db
+      .update(users)
+      .set({ publicKey })
+      .where(eq(users.id, userId))
+      .returning();
     
-    const updatedUser = {
-      ...user,
-      publicKey
-    };
-    
-    this.users.set(userId, updatedUser);
-    return updatedUser;
+    return user || undefined;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
