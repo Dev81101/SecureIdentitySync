@@ -138,27 +138,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register a new user
   app.post('/api/register', async (req: Request, res: Response) => {
     try {
+      console.log('Registration attempt with data:', JSON.stringify(req.body));
+      
+      // Validate input data
       const userData = insertUserSchema.parse(req.body);
+      console.log('Validation passed, checking for existing user...');
       
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
+        console.log('User already exists:', userData.email);
         return res.status(409).json({ 
           message: "A user with this email already exists" 
         });
       }
       
+      console.log('No existing user found, creating new user...');
+      
       // Create user
       const user = await storage.createUser(userData);
+      console.log('User created:', user.id);
       
       // Automatically set email as verified
+      console.log('Setting email as verified for user:', user.id);
       const updatedUser = await storage.updateUser(user.id, { emailVerified: true });
       if (!updatedUser) {
+        console.error('Failed to verify user email for user:', user.id);
         return res.status(500).json({ message: "Failed to verify user email" });
       }
       
       // Store user ID in session
       req.session.userId = user.id;
+      console.log('User ID stored in session:', user.id);
       
       // Respond with success and direct user to face capture
       res.status(201).json({ 
@@ -167,10 +178,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         redirectToFace: true
       });
     } catch (error: any) {
+      console.error('Registration error:', error);
       if (error.errors) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to register user" });
+      res.status(500).json({ 
+        message: "Failed to register user", 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
@@ -459,10 +474,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const sqliteResult = await initSQLiteSchema();
         
         if (sqliteResult.success && sqliteResult.sqlite) {
-          // Test connection
-          const stmt = sqliteResult.sqlite.prepare('SELECT 1 as test');
-          const result = stmt.get();
-          sqliteStatus.connected = result?.test === 1;
+          try {
+            // Test connection
+            const stmt = sqliteResult.sqlite.prepare('SELECT 1 as test_value');
+            const result = stmt.get();
+            sqliteStatus.connected = result?.test_value === 1;
+          } catch (error) {
+            console.error('SQLite test query error:', error);
+            sqliteStatus.error = error instanceof Error ? error.message : 'Unknown error';
+          }
           
           // Get table list
           const tableStmt = sqliteResult.sqlite.prepare(`

@@ -38,9 +38,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // We'll skip automatic database schema initialization on server start
-  // and let the database status API endpoint handle initialization
-  log('Skipping automatic database initialization - will initialize on first API request');
+  // Initialize database schema on server start
+  log('Initializing database schema...');
+  const results = await initAllDatabases();
+  log('Database initialization results:', JSON.stringify(results));
 
   const server = await registerRoutes(app);
 

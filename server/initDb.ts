@@ -92,30 +92,39 @@ export async function initSQLiteSchema() {
   try {
     console.log('Initializing SQLite schema...');
     
-    // Directly import SQLite to use for initialization
-    const Database = (await import('better-sqlite3')).default;
-    const sqlite = new Database(':memory:');
+    // Get direct access to the SQLite instance from db.ts
+    const { sqlite } = await import('./db');
     
-    // For SQLite, create the table directly
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT NOT NULL UNIQUE,
-        name TEXT NOT NULL,
-        public_key TEXT,
-        face_descriptor TEXT,
-        email_verified INTEGER DEFAULT 0,
-        verification_token TEXT,
-        verification_token_expiry INTEGER
-      );
-    `);
-    
-    console.log('SQLite users table created successfully');
-    return { 
-      success: true,
-      // Return the SQLite instance for connection testing
-      sqlite
-    };
+    try {
+      // Create the users table directly
+      sqlite.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT NOT NULL UNIQUE,
+          name TEXT NOT NULL,
+          public_key TEXT,
+          face_descriptor TEXT,
+          email_verified INTEGER DEFAULT 0,
+          verification_token TEXT,
+          verification_token_expiry INTEGER
+        );
+      `);
+      
+      console.log('SQLite users table created successfully');
+      
+      // Test that the table was created
+      const tables = sqlite.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all();
+      console.log('Available tables:', tables.map((t: any) => t.name).join(', '));
+      
+      return { 
+        success: true,
+        // Return the SQLite instance for connection testing
+        sqlite: sqlite
+      };
+    } catch (innerError) {
+      console.error('Error with SQLite setup:', innerError);
+      throw innerError;
+    }
   } catch (error) {
     console.error('Error initializing SQLite schema:', error);
     return { 
@@ -131,15 +140,11 @@ export async function initSQLiteSchema() {
 export async function initAllDatabases() {
   const results: Record<string, any> = {};
   
-  // Initialize PostgreSQL if available
-  if (process.env.DATABASE_URL) {
-    results.postgres = await initPostgresSchema();
-  }
-  
-  // Always initialize SQLite as a fallback
+  // Always initialize SQLite as our primary database
   results.sqlite = await initSQLiteSchema();
+  console.log('SQLite database initialized:', results.sqlite.success);
   
-  // Initialize SQL Server
+  // Initialize SQL Server if needed
   try {
     const { createSqlServerTables } = await import('./sqlServerMigration');
     results.sqlServer = await createSqlServerTables();

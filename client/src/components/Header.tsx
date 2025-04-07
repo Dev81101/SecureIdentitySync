@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Lock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 const Header = () => {
@@ -51,18 +51,18 @@ const Header = () => {
             <ul className="flex space-x-8">
               <li>
                 <Link href="/">
-                  <a className={`font-medium ${location === "/" ? "text-primary" : "text-gray-600 hover:text-primary transition"}`}>
+                  <span className={`font-medium cursor-pointer ${location === "/" ? "text-primary" : "text-gray-600 hover:text-primary transition"}`}>
                     Home
-                  </a>
+                  </span>
                 </Link>
               </li>
               {user ? (
                 <>
                   <li>
                     <Link href="/secure">
-                      <a className={`font-medium ${location === "/secure" ? "text-primary" : "text-gray-600 hover:text-primary transition"}`}>
+                      <span className={`font-medium cursor-pointer ${location === "/secure" ? "text-primary" : "text-gray-600 hover:text-primary transition"}`}>
                         Secure Area
-                      </a>
+                      </span>
                     </Link>
                   </li>
                   <li>
@@ -78,16 +78,16 @@ const Header = () => {
                 <>
                   <li>
                     <Link href="/login">
-                      <a className={`font-medium ${location === "/login" ? "text-primary" : "text-gray-600 hover:text-primary transition"}`}>
+                      <span className={`font-medium cursor-pointer ${location === "/login" ? "text-primary" : "text-gray-600 hover:text-primary transition"}`}>
                         Login
-                      </a>
+                      </span>
                     </Link>
                   </li>
                   <li>
                     <Link href="/register">
-                      <a className={`font-medium ${location === "/register" ? "text-primary" : "text-gray-600 hover:text-primary transition"}`}>
+                      <span className={`font-medium cursor-pointer ${location === "/register" ? "text-primary" : "text-gray-600 hover:text-primary transition"}`}>
                         Register
-                      </a>
+                      </span>
                     </Link>
                   </li>
                 </>
@@ -120,16 +120,16 @@ const Header = () => {
       <div className={`md:hidden ${isMobileMenuOpen ? "" : "hidden"}`}>
         <div className="px-2 pt-2 pb-3 space-y-1">
           <Link href="/">
-            <a className={`block px-3 py-2 rounded-md text-base font-medium ${location === "/" ? "text-primary" : "text-gray-600 hover:text-primary"}`}>
+            <span className={`block px-3 py-2 rounded-md text-base font-medium cursor-pointer ${location === "/" ? "text-primary" : "text-gray-600 hover:text-primary"}`}>
               Home
-            </a>
+            </span>
           </Link>
           {user ? (
             <>
               <Link href="/secure">
-                <a className={`block px-3 py-2 rounded-md text-base font-medium ${location === "/secure" ? "text-primary" : "text-gray-600 hover:text-primary"}`}>
+                <span className={`block px-3 py-2 rounded-md text-base font-medium cursor-pointer ${location === "/secure" ? "text-primary" : "text-gray-600 hover:text-primary"}`}>
                   Secure Area
-                </a>
+                </span>
               </Link>
               <button
                 onClick={handleLogout}
@@ -141,14 +141,14 @@ const Header = () => {
           ) : (
             <>
               <Link href="/login">
-                <a className={`block px-3 py-2 rounded-md text-base font-medium ${location === "/login" ? "text-primary" : "text-gray-600 hover:text-primary"}`}>
+                <span className={`block px-3 py-2 rounded-md text-base font-medium cursor-pointer ${location === "/login" ? "text-primary" : "text-gray-600 hover:text-primary"}`}>
                   Login
-                </a>
+                </span>
               </Link>
               <Link href="/register">
-                <a className={`block px-3 py-2 rounded-md text-base font-medium ${location === "/register" ? "text-primary" : "text-gray-600 hover:text-primary"}`}>
+                <span className={`block px-3 py-2 rounded-md text-base font-medium cursor-pointer ${location === "/register" ? "text-primary" : "text-gray-600 hover:text-primary"}`}>
                   Register
-                </a>
+                </span>
               </Link>
             </>
           )}
