@@ -68,7 +68,7 @@ app.use((req, res, next) => {
   const port = 5000;
   server.listen({
     port,
-    host: "localhost",
+    host: "127.0.0.1", // Use explicit IPv4 address instead of localhost
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
