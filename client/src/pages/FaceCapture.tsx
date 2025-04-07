@@ -154,13 +154,17 @@ const FaceCapture = () => {
         const verifyResponse = await apiRequest("POST", "/api/login/verify", { signature });
         const verifyData = await verifyResponse.json();
         
-        // Complete login
-        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-        toast({
-          title: "Login Successful",
-          description: "You've been authenticated successfully.",
-        });
-        navigate("/secure");
+        // Complete login - invalidate the user query to refresh auth state
+        await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        
+        // Add a small delay to ensure the authentication state is updated
+        setTimeout(() => {
+          toast({
+            title: "Login Successful",
+            description: "You've been authenticated successfully.",
+          });
+          navigate("/secure");
+        }, 500);
       } else {
         throw new Error("Face verification failed");
       }

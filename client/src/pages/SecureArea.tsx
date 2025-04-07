@@ -11,21 +11,35 @@ const SecureArea = () => {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
 
-  const { data: user, isLoading, isError } = useQuery({
+  // Define User type for improved type safety
+  type User = {
+    id: number;
+    name: string;
+    email: string;
+    emailVerified: boolean;
+  };
+  
+  const { data: user, isLoading, isError, isSuccess } = useQuery<User>({
     queryKey: ['/api/user'],
+    retry: 1, // Only retry once to avoid excessive requests
   });
 
   // If user is not authenticated, redirect to login
   useEffect(() => {
     if (isError) {
-      toast({
-        variant: "destructive",
-        title: "Authentication required",
-        description: "Please log in to access this page.",
-      });
-      navigate("/login");
+      // A short delay before redirecting to ensure state is properly updated
+      const redirectTimer = setTimeout(() => {
+        toast({
+          variant: "destructive",
+          title: "Authentication required",
+          description: "Please log in to access this page.",
+        });
+        navigate("/login");
+      }, 300);
+      
+      return () => clearTimeout(redirectTimer);
     }
-  }, [isError, navigate]);
+  }, [isError, navigate, toast]);
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -53,7 +67,7 @@ const SecureArea = () => {
     logoutMutation.mutate();
   };
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="text-center">
@@ -64,6 +78,7 @@ const SecureArea = () => {
     );
   }
 
+  // At this point we know user exists and is authenticated
   return (
     <div className="max-w-4xl mx-auto">
       <Card>
@@ -81,11 +96,11 @@ const SecureArea = () => {
             <div className="space-y-3">
               <div className="flex">
                 <span className="text-gray-600 w-32">Name:</span>
-                <span className="font-medium">{user?.name}</span>
+                <span className="font-medium">{user.name}</span>
               </div>
               <div className="flex">
                 <span className="text-gray-600 w-32">Email:</span>
-                <span className="font-medium">{user?.email}</span>
+                <span className="font-medium">{user.email}</span>
               </div>
               <div className="flex">
                 <span className="text-gray-600 w-32">Status:</span>
