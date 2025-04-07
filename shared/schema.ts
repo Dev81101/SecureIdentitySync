@@ -1,14 +1,20 @@
-import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { 
+  sqliteTable as sqlServerTable,
+  text,
+  integer
+} from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+// Using SQLite table structure as a close approximation for SQL Server
+// since we don't have direct SQL Server types in drizzle-orm
+export const users = sqlServerTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   publicKey: text("public_key"),
-  faceDescriptor: jsonb("face_descriptor"),
-  emailVerified: boolean("email_verified").default(false),
+  faceDescriptor: text("face_descriptor"), // Store JSON as text
+  emailVerified: integer("email_verified", { mode: "boolean" }).default(false),
   verificationToken: text("verification_token"),
   verificationTokenExpiry: integer("verification_token_expiry"),
 });

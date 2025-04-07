@@ -2,6 +2,10 @@ import { users, type User, type InsertUser } from "@shared/schema";
 import crypto from "crypto";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import { parseJsonFromDb, arrayToJsonString } from "./dbUtils";
+
+// Type assertion to handle the union type issue between PostgreSQL and SQLite
+const dbAny = db as any;
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -16,12 +20,12 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await dbAny.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db
+    const [user] = await dbAny
       .select()
       .from(users)
       .where(eq(users.email, email.toLowerCase()));
@@ -29,7 +33,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
+    const [user] = await dbAny
       .insert(users)
       .values({
         ...insertUser,
@@ -41,7 +45,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const [user] = await db
+    const [user] = await dbAny
       .update(users)
       .set(updates)
       .where(eq(users.id, id))
@@ -56,7 +60,7 @@ export class DatabaseStorage implements IStorage {
     const expiry = Math.floor(Date.now() / 1000) + 86400;
     
     // Update the user with the token
-    const [user] = await db
+    const [user] = await dbAny
       .update(users)
       .set({
         verificationToken: token,
@@ -72,7 +76,7 @@ export class DatabaseStorage implements IStorage {
   async verifyUserEmail(token: string): Promise<User | undefined> {
     // Find the user with the given token
     const now = Math.floor(Date.now() / 1000);
-    const [user] = await db
+    const [user] = await dbAny
       .select()
       .from(users)
       .where(eq(users.verificationToken, token));
@@ -82,7 +86,7 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Mark email as verified and clear token
-    const [verifiedUser] = await db
+    const [verifiedUser] = await dbAny
       .update(users)
       .set({
         emailVerified: true,
@@ -96,9 +100,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async saveFaceDescriptor(userId: number, faceDescriptor: number[]): Promise<User | undefined> {
-    const [user] = await db
+    // Convert array to JSON string for SQL Server storage
+    const faceDescriptorJson = arrayToJsonString(faceDescriptor);
+    
+    const [user] = await dbAny
       .update(users)
-      .set({ faceDescriptor })
+      .set({ faceDescriptor: faceDescriptorJson })
       .where(eq(users.id, userId))
       .returning();
     
@@ -106,7 +113,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async savePublicKey(userId: number, publicKey: string): Promise<User | undefined> {
-    const [user] = await db
+    const [user] = await dbAny
       .update(users)
       .set({ publicKey })
       .where(eq(users.id, userId))
