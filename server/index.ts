@@ -64,13 +64,11 @@ app.use((req, res, next) => {
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
-  // It is the only port that is not firewalled.
+  // For Windows compatibility, use simple listening method
   const port = 5000;
-  server.listen({
-    port,
-    host: "127.0.0.1", // Use explicit IPv4 address instead of localhost
-    reusePort: true,
-  }, () => {
+  
+  // Simple server listening without options - more compatible with Windows
+  server.listen(port, () => {
     log(`serving on port ${port}`);
   });
 })();
