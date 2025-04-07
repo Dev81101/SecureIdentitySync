@@ -32,7 +32,20 @@ function createConsoleEmailTransport() {
       // Extract the verification URL from the HTML content
       const urlMatch = mailOptions.html.match(/href="([^"]+)"/);
       if (urlMatch && urlMatch[1]) {
-        console.log(`\n🔐 VERIFICATION LINK (CLICK THIS): ${urlMatch[1]}\n`);
+        const verificationLink = urlMatch[1];
+        
+        // Make the verification link more visible in the console
+        console.log('\n');
+        console.log('╔═════════════════════════════════════════════════════════════════════╗');
+        console.log('║                                                                     ║');
+        console.log('║  🔐 VERIFICATION LINK:                                              ║');
+        console.log('║                                                                     ║');
+        console.log(`║  ${verificationLink}`);
+        console.log('║                                                                     ║');
+        console.log('║  👆 COPY & PASTE THIS LINK TO YOUR BROWSER TO VERIFY YOUR EMAIL     ║');
+        console.log('║                                                                     ║');
+        console.log('╚═════════════════════════════════════════════════════════════════════╝');
+        console.log('\n');
       }
       
       console.log("============================\n");
@@ -45,7 +58,21 @@ function createConsoleEmailTransport() {
 const emailTransport = createConsoleEmailTransport();
 
 async function sendVerificationEmail(email: string, token: string) {
-  const verificationUrl = `${process.env.HOST_URL || 'http://localhost:5000'}/verify/${token}`;
+  // Use the current URL from request or a fallback URL
+  let baseUrl = process.env.HOST_URL;
+  if (!baseUrl) {
+    // For Replit, use the project URL
+    baseUrl = 'https://' + process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co';
+    // Fallback if Replit environment variables aren't available
+    if (baseUrl.includes('undefined')) {
+      baseUrl = 'http://localhost:5000';
+    }
+  }
+  
+  const verificationUrl = `${baseUrl}/verify/${token}`;
+  
+  // Log the URL for debugging
+  console.log('Generated verification URL:', verificationUrl);
   
   await emailTransport.sendMail({
     from: '"SecureFace" <jakel.pannyworth@gmail.com>',
